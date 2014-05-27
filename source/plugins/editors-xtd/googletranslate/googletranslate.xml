@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension version="2.5" type="plugin" group="editors-xtd" method="upgrade">
+    <name>PLG_EDITORS-XTD_GOOGLETRANSLATE</name>
+    <author>Yireo</author>
+    <creationDate>May 2014</creationDate>
+    <license>http://www.gnu.org/copyleft/gpl.html GNU/GPL</license>
+    <authorEmail>info@yireo.com</authorEmail>
+    <authorUrl>http://www.yireo.com/</authorUrl>
+    <version>0.1.10</version>
+    <description>PLG_EDITORS-XTD_GOOGLETRANSLATE_DESC</description>
+
+    <files>
+        <filename plugin="googletranslate">googletranslate.php</filename>
+        <filename>index.html</filename>
+    </files>
+
+    <languages>
+        <language tag="en-GB">en-GB.plg_editors-xtd_googletranslate.ini</language>
+        <language tag="en-GB">en-GB.plg_editors-xtd_googletranslate.sys.ini</language>
+    </languages>
+</extension>

@@ -1,0 +1,17 @@
+/*
+ * Joomla! component - GoogleTranslate
+ *
+ * @author Yireo (info@yireo.com)
+ * @copyright Copyright 2014
+ * @license GNU Public License
+ * @link http://www.yireo.com
+ */
+
+.button2-left .copy {
+    background: url(../images/button.png) 100% 0 no-repeat;
+}
+
+.button2-left .loading {
+    background: url(../images/button-loading.gif) 100% 0 no-repeat;
+}
+

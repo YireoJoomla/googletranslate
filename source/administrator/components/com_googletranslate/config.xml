@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<config>
+    <fields>
+        <fieldset name="basic">
+            <field name="api_id" type="text" default="" label="COM_GOOGLETRANSLATE_FIELD_API_ID" description="COM_GOOGLETRANSLATE_FIELD_API_ID_DESC" size="64" />
+        </fieldset>
+        <fieldset name="advanced">
+            <field name="load_jquery" type="radio" default="1" label="COM_GOOGLETRANSLATE_FIELD_LOAD_JQUERY" description="COM_GOOGLETRANSLATE_LOAD_JQUERY">
+                <option value="0">JNO</option>
+                <option value="1">JYES</option>
+            </field>
+            <field name="backend_feed" type="radio" default="1" label="COM_GOOGLETRANSLATE_FIELD_BACKEND_FEED" description="COM_GOOGLETRANSLATE_FIELD_BACKEND_FEED_DESC">
+                <option value="0">JNO</option>
+                <option value="1">JYES</option>
+            </field>
+            <field name="support_key" type="text" default="" size="60"
+                label="LIB_YIREO_CONFIG_FIELD_SUPPORT_KEY" description="LIB_YIREO_CONFIG_FIELD_SUPPORT_KEY_DESC" />
+        </fieldset>
+    </fields>
+</config>
