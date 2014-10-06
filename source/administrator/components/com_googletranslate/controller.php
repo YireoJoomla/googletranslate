@@ -79,6 +79,10 @@ class GoogleTranslateController extends YireoController
         $toLang = preg_replace('/-([a-zA-Z0-9]+)$/', '', $toLang);
         $fromLang = preg_replace('/-([a-zA-Z0-9]+)$/', '', $fromLang);
 
+        // Convert text to UTF-8
+        if(function_exists('utf8_decode')) $text = utf8_decode($text);
+        if(function_exists('iconv')) $text = @iconv('UTF-8', 'ISO8859-1', $text);
+
         $params = JComponentHelper::getParams('com_googletranslate');
         $api_id = $params->get('api_id');
 
@@ -190,7 +194,10 @@ class GoogleTranslateController extends YireoController
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($fields));
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array('X-HTTP-Method-Override: GET'));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            'X-HTTP-Method-Override: GET',
+            'Content-Type: application/x-www-form-urlencoded; charset=utf-8',
+        ));
         curl_setopt($ch, CURLOPT_REFERER, JURI::current());
         $result = curl_exec($ch);
         if ($result == false) {
