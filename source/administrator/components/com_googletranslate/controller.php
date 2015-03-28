@@ -79,35 +79,23 @@ class GoogleTranslateController extends YireoController
         $toLang = preg_replace('/-([a-zA-Z0-9]+)$/', '', $toLang);
         $fromLang = preg_replace('/-([a-zA-Z0-9]+)$/', '', $fromLang);
 
-        // Convert text to UTF-8
-        if(function_exists('utf8_decode')) $text = utf8_decode($text);
-        if(function_exists('iconv')) $text = @iconv('UTF-8', 'ISO8859-1', $text);
-
-        $params = JComponentHelper::getParams('com_googletranslate');
-        $api_id = $params->get('api_id');
-
-        // Sanity checks
-        if (empty($api_id)) $this->response(JText::_('GoogleTranslate API-key is not configured'), false);
-        if (empty($text)) $this->response(JText::_('No text to translate'), false);
-        if (empty($toLang)) $this->response(JText::_('Failed to detect destination-language'), false);
-
-        // Get the result
-        $result = $this->getCurlTranslate($text, $toLang, $fromLang);
-        if (empty($result)) $this->response(JText::_('No response from Google'), false);
-
-        // Parse the result
-        $result = json_decode($result, true);
-        if (isset($result['data']['translations'][0]['translatedText'])) {
-            $text = $result['data']['translations'][0]['translatedText'];
-            $text = urldecode($text);
-            $this->response($text);
+        // Get the translation model
+        $model = $this->getModel('translate');
+        if(empty($model)) {
+            $this->response(JText::_('Unable to fetch translation model'), false);
+            return false;
         }
 
-        if (isset($result['error']['errors'][0]['message'])) {
-            $this->response('GoogleTranslate message: '.var_export($result['error']['errors'][0]['message'], true), false);
+        // Fetch the translation
+        $translation = $model->translate($text, $toLang, $fromLang);
+        if(!empty($translation)) {
+            $this->response($translation);
+            return true;
         }
-
-        $this->response('Unknown GoogleTranslate error: '.var_export($result, true), false);
+        
+        $translationErrors = $model->getErrors();
+        $this->response(implode('; ', $translationErrors), false);
+        return false;
     }
 
     /*
@@ -124,102 +112,5 @@ class GoogleTranslateController extends YireoController
         print json_encode($response);
         $application = JFactory::getApplication();
         $application->close();
-    }
-    
-    /*
-     * Helper method to get a CURL-response 
-     *
-     * @access protected
-     * @param string $text
-     * @return string
-     */
-    protected function getCurlDetect($text)
-    {
-        $params = JComponentHelper::getParams('com_googletranslate');
-        $api_id = $params->get('api_id');
-        $fields = array(
-            'key' => $api_id,
-            'q' => $text,
-        );
-        return $this->getCurlResponse('detect', $fields);
-    }
-
-    /*
-     * Helper method to get a CURL-response 
-     * 
-     * @access protected
-     * @param string $text
-     * @param string $toLang
-     * @param string $fromLang
-     * @return string
-     * @link http://msdn.microsoft.com/en-us/library/ff512406.aspx
-     */
-    protected function getCurlTranslate($text, $toLang, $fromLang)
-    {
-        /*$data = array(
-            'data' => array(
-                'translations' => array(
-                    array('translatedText' => 'Mijn vertaling'),
-                ),
-            ),
-        );
-        return json_encode($data);*/
-        $params = JComponentHelper::getParams('com_googletranslate');
-        $api_id = $params->get('api_id');
-        $fields = array(
-            'key' => $api_id,
-            'target' => $toLang,
-            //'source' => $fromLang,
-            'format' => 'html',
-            'prettyprint' => '1',
-            'q' => $text,
-        );
-        return $this->getCurlResponse(null, $fields);
-    }
-
-    /*
-     * Helper method to get a CURL-response 
-     *
-     * @access protected
-     * @param string $task
-     * @param array $fields
-     * @return string
-     */
-    protected function getCurlResponse($task = null, $fields)
-    {
-        $url = 'https://www.googleapis.com/language/translate/v2';
-        if (!empty($task)) $url .= '/'.$task;
-
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($fields));
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-            'X-HTTP-Method-Override: GET',
-            'Content-Type: application/x-www-form-urlencoded; charset=utf-8',
-        ));
-        curl_setopt($ch, CURLOPT_REFERER, JURI::current());
-        $result = curl_exec($ch);
-        if ($result == false) {
-            $this->response(JText::_('CURL error').': '.curl_error($ch), false);
-        }
-        return $result;
-    }
-
-    /*
-     * Helper method to check for Joomla! 1.5
-     *
-     * @access protected
-     * @param null
-     * @return bool
-     */
-    protected function isJoomla15()
-    {
-        JLoader::import( 'joomla.version' );
-        $version = new JVersion();
-        if (version_compare( $version->RELEASE, '1.5', 'eq')) {
-            return true;
-        }
-        return false;
     }
 }

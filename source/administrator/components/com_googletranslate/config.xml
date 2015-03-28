@@ -2,19 +2,32 @@
 <config>
     <fields>
         <fieldset name="basic">
-            <field name="api_id" type="text" default="" label="COM_GOOGLETRANSLATE_FIELD_API_ID" description="COM_GOOGLETRANSLATE_FIELD_API_ID_DESC" size="64" />
+            <field name="api_id" type="text" default="" class="input-xxlarge"
+                label="COM_GOOGLETRANSLATE_FIELD_API_ID" 
+                description="COM_GOOGLETRANSLATE_FIELD_API_ID_DESC" />
         </fieldset>
         <fieldset name="advanced">
-            <field name="load_jquery" type="radio" default="1" label="COM_GOOGLETRANSLATE_FIELD_LOAD_JQUERY" description="COM_GOOGLETRANSLATE_LOAD_JQUERY">
+            <field name="fix_encoding" type="radio" default="0" class="btn-group"
+                label="COM_GOOGLETRANSLATE_FIELD_FIX_ENCODING"
+                description="COM_GOOGLETRANSLATE_FIELD_FIX_ENCODING_DESC">
                 <option value="0">JNO</option>
                 <option value="1">JYES</option>
             </field>
-            <field name="backend_feed" type="radio" default="1" label="COM_GOOGLETRANSLATE_FIELD_BACKEND_FEED" description="COM_GOOGLETRANSLATE_FIELD_BACKEND_FEED_DESC">
+            <field name="load_jquery" type="radio" default="1" class="btn-group"
+                label="COM_GOOGLETRANSLATE_FIELD_LOAD_JQUERY"
+                description="COM_GOOGLETRANSLATE_FIELD_LOAD_JQUERY_DESC">
                 <option value="0">JNO</option>
                 <option value="1">JYES</option>
             </field>
-            <field name="support_key" type="text" default="" size="60"
-                label="LIB_YIREO_CONFIG_FIELD_SUPPORT_KEY" description="LIB_YIREO_CONFIG_FIELD_SUPPORT_KEY_DESC" />
+            <field name="backend_feed" type="radio" default="1" class="btn-group"
+                label="COM_GOOGLETRANSLATE_FIELD_BACKEND_FEED"
+                description="COM_GOOGLETRANSLATE_FIELD_BACKEND_FEED_DESC">
+                <option value="0">JNO</option>
+                <option value="1">JYES</option>
+            </field>
+            <field name="support_key" type="text" default="" class="input-xxlarge"
+                label="LIB_YIREO_CONFIG_FIELD_SUPPORT_KEY"
+                description="LIB_YIREO_CONFIG_FIELD_SUPPORT_KEY_DESC" />
         </fieldset>
     </fields>
 </config>
