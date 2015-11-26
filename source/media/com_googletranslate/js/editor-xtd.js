@@ -36,13 +36,13 @@ function doGoogleTranslate(editor, language, button) {
     }
 
     // Fetch the text
-    if (textfield = jQuery(editor)) {
+    if (textfield = jQuery('#' + editor)) {
         var originalText = textfield.val();
     }
 
     // Check for TinyMCE
     var useTinyMCE = false;
-    if (tinyMCE) {
+    if (typeof tinyMCE != 'undefined') {
         var tinyMCEEditor = tinyMCE.get(editor);
         if (tinyMCEEditor) {
             var originalText = tinyMCEEditor.getContent();

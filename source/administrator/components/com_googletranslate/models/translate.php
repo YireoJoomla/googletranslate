@@ -33,6 +33,15 @@ class GoogleTranslateModelTranslate extends YireoCommonModel
     {
         $params = JComponentHelper::getParams('com_googletranslate');
 
+        if ($params->get('bork', 0) == 1) {
+            $newText = $this->bork($text);
+            if (empty($newText)) {
+                return 'Bork failed';
+            }
+
+            return $newText;
+        }
+
         // Convert text to UTF-8
         if($params->get('fix_encoding', 0) == 1 && function_exists('utf8_decode')) {
             $newText = utf8_decode($text);
@@ -203,5 +212,53 @@ class GoogleTranslateModelTranslate extends YireoCommonModel
     public function getErrors()
     {
         return $this->errors;
+    }
+
+    /**
+     * Method to borkify a given text
+     *
+     * @param $text
+     * @return mixed|string
+     */
+    public function bork($text)
+    {
+        $textBlocks = preg_split('/(%[^ ]+)/', $text, -1, PREG_SPLIT_DELIM_CAPTURE);
+        $newTextBlocks = array();
+
+        foreach ($textBlocks as $text) {
+            if (strlen($text) && $text[0] == '%') {
+                $newTextBlocks[] = (string)$text;
+                continue;
+            }
+
+            $originalText = $text;
+            $searchMap = array(
+                '/au/', '/\Bu/', '/\Btion/', '/an/', '/a\B/', '/en\b/',
+                '/\Bew/', '/\Bf/', '/\Bir/', '/\Bi/', '/\bo/', '/ow/', '/ph/',
+                '/th\b/', '/\bU/', '/y\b/', '/v/', '/w/', '/oo/', '/oe/'
+            );
+            $replaceMap = array(
+                'oo', 'oo', 'shun', 'un', 'e', 'ee',
+                'oo', 'ff', 'ur', 'ee', 'oo', 'oo', 'f',
+                't', 'Oo', 'ai', 'f', 'v', 'ø', 'œ',
+            );
+
+            $text = preg_replace($searchMap, $replaceMap, $text);
+            if ($originalText == $text && count($newTextBlocks)) {
+                $text .= '-a';
+            }
+
+            if (empty($text)) {
+                $text = $originalText;
+            }
+
+            $newTextBlocks[] = (string)$text;
+        }
+
+        $text = implode('', $newTextBlocks);
+        $text = preg_replace('/([:.?!])(.*)/', '\\2\\1', $text);
+        //$text .= '['.$this->getData('toLang').']';
+
+        return $text;
     }
 }
