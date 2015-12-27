@@ -7,7 +7,8 @@
  * @link http://www.yireo.com
  */
 
-function doGoogleTranslate(editor, language, button) {
+function doGoogleTranslate(editor, language, button)
+{
     // Loading
     setGoogleTranslateLoading(button);
 
@@ -31,19 +32,31 @@ function doGoogleTranslate(editor, language, button) {
         if (button) {
             setGoogleTranslateError(button);
         }
+
+        console.log('Failed to detect which language to translate to');
         alert('Failed to detect which language to translate to');
         return false;
     }
 
     // Fetch the text
+    var originalText = '';
+
     if (textfield = jQuery('#' + editor)) {
-        var originalText = textfield.val();
+        if (jQuery('#' + editor).length) {
+            var originalText = textfield.val();
+        }
     }
 
     // Check for TinyMCE
     var useTinyMCE = false;
     if (typeof tinyMCE != 'undefined') {
         var tinyMCEEditor = tinyMCE.get(editor);
+        if (tinyMCEEditor) {
+            var originalText = tinyMCEEditor.getContent();
+            var useTinyMCE = true;
+        }
+
+        var tinyMCEEditor = tinyMCE.activeEditor;
         if (tinyMCEEditor) {
             var originalText = tinyMCEEditor.getContent();
             var useTinyMCE = true;

@@ -2,263 +2,359 @@
 /**
  * Joomla! component GoogleTranslate
  *
- * @author Yireo
+ * @author    Yireo
  * @copyright Copyright 2015
- * @license GNU Public License
- * @link http://www.yireo.com/
+ * @license   GNU Public License
+ * @link      http://www.yireo.com/
  */
 
 // Check to ensure this file is included in Joomla!
 defined('_JEXEC') or die();
 
 // Include the loader
-require_once JPATH_COMPONENT.'/lib/loader.php';
+require_once JPATH_COMPONENT . '/lib/loader.php';
 
 class GoogleTranslateModelTranslate extends YireoCommonModel
 {
-    protected $_skip_table = true;
+	/**
+	 * Make sure this model is connected to any table
+	 *
+	 * @var bool
+	 */
+	protected $_skip_table = true;
 
-    protected $errors = array();
+	/**
+	 * Array of errors
+	 *
+	 * @var array
+	 */
+	protected $errors = array();
 
-    protected $request_fields = array();
+	/**
+	 * @var array
+	 */
+	protected $request_fields = array();
 
-    /**
-     * Translate task
-     *
-     * @access public
-     * @param string
-     * @return null
-     */
-    public function translate($text, $toLang = null, $fromLang = null)
-    {
-        $params = JComponentHelper::getParams('com_googletranslate');
+	/**
+	 * Translate task
+	 *
+	 * @param $text string
+	 * @param $toLang string
+	 * @param $fromLang string
+	 *
+	 * @return string
+	 */
+	public function translate($text, $toLang = null, $fromLang = null)
+	{
+		$params = JComponentHelper::getParams('com_googletranslate');
 
-        if ($params->get('bork', 0) == 1) {
-            $newText = $this->bork($text);
-            if (empty($newText)) {
-                return 'Bork failed';
-            }
+		if ($params->get('bork', 0) == 1)
+		{
+			$newText = $this->bork($text);
 
-            return $newText;
-        }
+			if (empty($newText))
+			{
+				return 'Bork failed';
+			}
 
-        // Convert text to UTF-8
-        if($params->get('fix_encoding', 0) == 1 && function_exists('utf8_decode')) {
-            $newText = utf8_decode($text);
-            if (strstr($newText, '????') == false) {
-                $text = $newText;
-            }
-        }
+			return $newText;
+		}
 
-        // Fix encoding issue
-        if($params->get('fix_encoding', 0) == 1 && function_exists('iconv')) {
-            $newText = @iconv('UTF-8', 'ISO8859-1', $text);
-            if (strstr($newText, '????') == false) {
-                $text = $newText;
-            }
-        }
+		// Convert text to UTF-8
+		if ($params->get('fix_encoding', 0) == 1 && function_exists('utf8_decode'))
+		{
+			$newText = utf8_decode($text);
 
-        // Fetch parameters
-        $api_id = $params->get('api_id');
+			if (strstr($newText, '????') == false)
+			{
+				$text = $newText;
+			}
+		}
 
-        // Sanity checks
-        if (empty($api_id)) {
-            $this->errors[] = JText::_('GoogleTranslate API-key is not configured');
-            return false;
-        }
+		// Fix encoding issue
+		if ($params->get('fix_encoding', 0) == 1 && function_exists('iconv'))
+		{
+			$newText = @iconv('UTF-8', 'ISO8859-1', $text);
 
-        if (empty($text)) {
-            $this->errors[] = JText::_('No text to translate');
-            return false;
-        }
+			if (strstr($newText, '????') == false)
+			{
+				$text = $newText;
+			}
+		}
 
-        if (empty($toLang)) {
-            $this->errors[] = JText::_('Failed to detect destination-language');
-            return false;
-        }
-    
-        // Get the result
-        $result = $this->getCurlTranslate($text, $toLang, $fromLang);
+		// Fetch parameters
+		$api_id = $params->get('api_id');
 
-        if (empty($result)) {
-            $this->errors[] = JText::_('No response from Google');
-            return false;
-        }
+		// Sanity checks
+		if (empty($api_id))
+		{
+			$this->errors[] = JText::_('GoogleTranslate API-key is not configured');
 
-        // Parse the result
-        $result = json_decode($result, true);
-        if (isset($result['data']['translations'][0]['translatedText'])) {
-            $text = $result['data']['translations'][0]['translatedText'];
+			return false;
+		}
 
-            if(empty($text)) {
-                $this->errors[] = JText::_('Empty translation result');
-                return false;
-            }
+		if (empty($text))
+		{
+			$this->errors[] = JText::_('No text to translate');
 
-            $text = urldecode($text);
-            return $text;
-        }
+			return false;
+		}
 
-        if (isset($result['error']['errors'][0]['message'])) {
-            $this->errors[] = JText::_('GoogleTranslate message');
-            $this->errors[] = var_export($result['error']['errors'][0]['message'], true);
-            $this->errors[] = var_export($this->request_fields, true);
-            return false;
-        }
+		if (empty($toLang))
+		{
+			$this->errors[] = JText::_('Failed to detect destination-language');
 
-        $this->errors[] = JText::_('Unknown GoogleTranslate error');
-        $this->errors[] = var_export($result, true);
-        return false;
-    }
+			return false;
+		}
 
-    /*
-     * Helper method to get a CURL-response 
-     *
-     * @access protected
-     * @param string $text
-     * @return string
-     */
-    protected function getCurlDetect($text)
-    {
-        $params = JComponentHelper::getParams('com_googletranslate');
-        $api_id = $params->get('api_id');
-        $fields = array(
-            'key' => $api_id,
-            'q' => $text,
-        );
-        return $this->getCurlResponse('detect', $fields);
-    }
+		// Get the result
+		$result = $this->getCurlTranslate($text, $toLang, $fromLang);
 
-    /*
-     * Helper method to get a CURL-response 
-     * 
-     * @access protected
-     * @param string $text
-     * @param string $toLang
-     * @param string $fromLang
-     * @return string
-     * @link http://msdn.microsoft.com/en-us/library/ff512406.aspx
-     */
-    protected function getCurlTranslate($text, $toLang, $fromLang)
-    {
-        $debug = false;
-        if($debug) {
-            $data = array(
-                'data' => array(
-                    'translations' => array(
-                        array('translatedText' => 'Mijn vertaling'),
-                    ),
-                ),
-            );
-            return json_encode($data);
-        }
+		if (empty($result))
+		{
+			$this->errors[] = JText::_('No response from Google');
 
-        $params = JComponentHelper::getParams('com_googletranslate');
-        $api_id = $params->get('api_id');
+			return false;
+		}
 
-        $this->request_fields = array(
-            'key' => $api_id,
-            'target' => $toLang,
-            //'source' => $fromLang,
-            'format' => 'html',
-            'prettyprint' => '1',
-            'q' => $text,
-        );
+		// Parse the result
+		$result = json_decode($result, true);
 
-        return $this->getCurlResponse(null, $this->request_fields);
-    }
+		if (isset($result['data']['translations'][0]['translatedText']))
+		{
+			$text = $result['data']['translations'][0]['translatedText'];
 
-    /*
-     * Helper method to get a CURL-response 
-     *
-     * @access protected
-     * @param string $task
-     * @param array $fields
-     * @return string
-     */
-    protected function getCurlResponse($task = null, $fields)
-    {
-        $url = 'https://www.googleapis.com/language/translate/v2';
-        if (!empty($task)) $url .= '/'.$task;
+			if (empty($text))
+			{
+				$this->errors[] = JText::_('Empty translation result');
 
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($fields));
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-            'X-HTTP-Method-Override: GET',
-            'Content-Type: application/x-www-form-urlencoded; charset=utf-8',
-        ));
-        curl_setopt($ch, CURLOPT_REFERER, JURI::current());
+				return false;
+			}
 
-        $result = curl_exec($ch);
-        if ($result == false) {
-            $this->errors[] = JText::_('CURL error') . ' = '. curl_error($ch);
-            return false;
-        }
+			$text = urldecode($text);
 
-        return $result;
-    }
+			return $text;
+		}
 
-    public function hasErrors()
-    {
-        if(!empty($this->errors)) {
-            return true;
-        }
+		if (isset($result['error']['errors'][0]['message']))
+		{
+			$this->errors[] = JText::_('GoogleTranslate message');
+			$this->errors[] = var_export($result['error']['errors'][0]['message'], true);
+			$this->errors[] = var_export($this->request_fields, true);
 
-        return false;
-    }
+			return false;
+		}
 
-    public function getErrors()
-    {
-        return $this->errors;
-    }
+		$this->errors[] = JText::_('Unknown GoogleTranslate error');
+		$this->errors[] = var_export($result, true);
 
-    /**
-     * Method to borkify a given text
-     *
-     * @param $text
-     * @return mixed|string
-     */
-    public function bork($text)
-    {
-        $textBlocks = preg_split('/(%[^ ]+)/', $text, -1, PREG_SPLIT_DELIM_CAPTURE);
-        $newTextBlocks = array();
+		return false;
+	}
 
-        foreach ($textBlocks as $text) {
-            if (strlen($text) && $text[0] == '%') {
-                $newTextBlocks[] = (string)$text;
-                continue;
-            }
+	/*
+	 * Helper method to get a CURL-response
+	 *
+	 * @param string $text
+	 *
+	 * @return string
+	 */
+	protected function getCurlDetect($text)
+	{
+		$params = JComponentHelper::getParams('com_googletranslate');
+		$api_id = $params->get('api_id');
+		$fields = array(
+			'key' => $api_id,
+			'q' => $text,);
 
-            $originalText = $text;
-            $searchMap = array(
-                '/au/', '/\Bu/', '/\Btion/', '/an/', '/a\B/', '/en\b/',
-                '/\Bew/', '/\Bf/', '/\Bir/', '/\Bi/', '/\bo/', '/ow/', '/ph/',
-                '/th\b/', '/\bU/', '/y\b/', '/v/', '/w/', '/oo/', '/oe/'
-            );
-            $replaceMap = array(
-                'oo', 'oo', 'shun', 'un', 'e', 'ee',
-                'oo', 'ff', 'ur', 'ee', 'oo', 'oo', 'f',
-                't', 'Oo', 'ai', 'f', 'v', 'ø', 'œ',
-            );
+		return $this->getCurlResponse('detect', $fields);
+	}
 
-            $text = preg_replace($searchMap, $replaceMap, $text);
-            if ($originalText == $text && count($newTextBlocks)) {
-                $text .= '-a';
-            }
+	/*
+	 * Helper method to get a CURL-response
+	 *
+	 * @param string $text
+	 * @param string $toLang
+	 * @param string $fromLang
+	 *
+	 * @return string
+	 *
+	 * @link http://msdn.microsoft.com/en-us/library/ff512406.aspx
+	 */
+	protected function getCurlTranslate($text, $toLang, $fromLang)
+	{
+		$debug = false;
 
-            if (empty($text)) {
-                $text = $originalText;
-            }
+		if ($debug)
+		{
+			$data = array(
+				'data' => array(
+					'translations' => array(
+						array('translatedText' => 'Mijn vertaling'),),),);
 
-            $newTextBlocks[] = (string)$text;
-        }
+			return json_encode($data);
+		}
 
-        $text = implode('', $newTextBlocks);
-        $text = preg_replace('/([:.?!])(.*)/', '\\2\\1', $text);
-        //$text .= '['.$this->getData('toLang').']';
+		$params = JComponentHelper::getParams('com_googletranslate');
+		$api_id = $params->get('api_id');
 
-        return $text;
-    }
+		$this->request_fields = array(
+			'key' => $api_id,
+			'target' => $toLang,
+			//'source' => $fromLang,
+			'format' => 'html',
+			'prettyprint' => '1',
+			'q' => $text,);
+
+		return $this->getCurlResponse(null, $this->request_fields);
+	}
+
+	/*
+	 * Helper method to get a CURL-response
+	 *
+	 * @param string $task
+	 * @param array $fields
+	 *
+	 * @return string
+	 */
+	protected function getCurlResponse($task = null, $fields)
+	{
+		$url = 'https://www.googleapis.com/language/translate/v2';
+
+		if (!empty($task))
+		{
+			$url .= '/' . $task;
+		}
+
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL, $url);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($fields));
+		curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+			'X-HTTP-Method-Override: GET',
+			'Content-Type: application/x-www-form-urlencoded; charset=utf-8',));
+		curl_setopt($ch, CURLOPT_REFERER, JURI::current());
+
+		$result = curl_exec($ch);
+
+		if ($result == false)
+		{
+			$this->errors[] = JText::_('CURL error') . ' = ' . curl_error($ch);
+
+			return false;
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Check whether there are any errors
+	 *
+	 * @return bool
+	 */
+	public function hasErrors()
+	{
+		if (!empty($this->errors))
+		{
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Get the listing of errors
+	 *
+	 * @return array
+	 */
+	public function getErrors()
+	{
+		return $this->errors;
+	}
+
+	/**
+	 * Method to borkify a given text
+	 *
+	 * @param $text
+	 *
+	 * @return mixed|string
+	 */
+	public function bork($text)
+	{
+		$textBlocks = preg_split('/(%[^ ]+)/', $text, -1, PREG_SPLIT_DELIM_CAPTURE);
+		$newTextBlocks = array();
+
+		foreach ($textBlocks as $text)
+		{
+			if (strlen($text) && $text[0] == '%')
+			{
+				$newTextBlocks[] = (string) $text;
+				continue;
+			}
+
+			$originalText = $text;
+			$searchMap = array(
+				'/au/',
+				'/\Bu/',
+				'/\Btion/',
+				'/an/',
+				'/a\B/',
+				'/en\b/',
+				'/\Bew/',
+				'/\Bf/',
+				'/\Bir/',
+				'/\Bi/',
+				'/\bo/',
+				'/ow/',
+				'/ph/',
+				'/th\b/',
+				'/\bU/',
+				'/y\b/',
+				'/v/',
+				'/w/',
+				'/oo/',
+				'/oe/');
+			$replaceMap = array(
+				'oo',
+				'oo',
+				'shun',
+				'un',
+				'e',
+				'ee',
+				'oo',
+				'ff',
+				'ur',
+				'ee',
+				'oo',
+				'oo',
+				'f',
+				't',
+				'Oo',
+				'ai',
+				'f',
+				'v',
+				'ø',
+				'œ',);
+
+			$text = preg_replace($searchMap, $replaceMap, $text);
+
+			if ($originalText == $text && count($newTextBlocks))
+			{
+				$text .= '-a';
+			}
+
+			if (empty($text))
+			{
+				$text = $originalText;
+			}
+
+			$newTextBlocks[] = (string) $text;
+		}
+
+		$text = implode('', $newTextBlocks);
+		$text = preg_replace('/([:.?!])(.*)/', '\\2\\1', $text);
+
+		//$text .= '['.$this->getData('toLang').']';
+
+		return $text;
+	}
 }

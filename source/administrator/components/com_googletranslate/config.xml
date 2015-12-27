@@ -31,12 +31,6 @@
                 <option value="0">JNO</option>
                 <option value="1">JYES</option>
             </field>
-            <field name="backend_feed" type="radio" default="1" class="btn-group"
-                label="COM_GOOGLETRANSLATE_FIELD_BACKEND_FEED"
-                description="COM_GOOGLETRANSLATE_FIELD_BACKEND_FEED_DESC">
-                <option value="0">JNO</option>
-                <option value="1">JYES</option>
-            </field>
             <field name="support_key" type="text" default="" class="input-xxlarge"
                 label="LIB_YIREO_CONFIG_FIELD_SUPPORT_KEY"
                 description="LIB_YIREO_CONFIG_FIELD_SUPPORT_KEY_DESC" />
