@@ -28,8 +28,8 @@ class PlgButtonGoogleTranslate extends JPlugin
 		// Add the proper JavaScript to this document
 		JHtml::_('jquery.framework');
 		$document = JFactory::getDocument();
-		$document->addScript(JURI::base() . '../media/com_googletranslate/js/editor-xtd.js');
-		$document->addStyleSheet(JURI::base() . '../media/com_googletranslate/css/editor-xtd.css');
+		$document->addScript(JUri::base() . '../media/com_googletranslate/js/editor-xtd.js');
+		$document->addStyleSheet(JUri::base() . '../media/com_googletranslate/css/editor-xtd.css');
 
 		// Detect the language
 		$lang = null;

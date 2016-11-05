@@ -65,7 +65,7 @@ class GoogleTranslateModelTranslate extends YireoCommonModel
 		{
 			$newText = utf8_decode($text);
 
-			if (strstr($newText, '????') == false)
+			if (!empty($text) && strstr($newText, '????') == false)
 			{
 				$text = $newText;
 			}
@@ -76,7 +76,7 @@ class GoogleTranslateModelTranslate extends YireoCommonModel
 		{
 			$newText = @iconv('UTF-8', 'ISO8859-1', $text);
 
-			if (strstr($newText, '????') == false)
+			if (!empty($text) && strstr($newText, '????') == false)
 			{
 				$text = $newText;
 			}

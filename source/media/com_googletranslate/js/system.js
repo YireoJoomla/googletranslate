@@ -1,5 +1,5 @@
 /*
- * Joomla! component - GoogeTranslate
+ * Joomla! component - GoogleTranslate
  *
  * @author Yireo (info@yireo.com)
  * @copyright Copyright 2015
@@ -45,11 +45,17 @@ function addButtonToInput(input)
     }
 
     var parent = input.parent();
+    var addonStyle = null;
+
+    if (input.hasClass('input-xxlarge')) {
+        addonStyle = 'height:auto; line-height:22px;';
+    }
+
     if(parent.hasClass('input-append') == false) {
         var html = '<div class="input-append">'
             + input.prop('outerHTML')
-            + '<span class="add-on">'
-            + '<a href="#" title="GoogleTranslate" onclick="javascript:doGoogleTranslate(\'#' + inputId + '\', null); return false;">'
+            + '<span class="add-on googletranslate-add-on" style="' + addonStyle + '">'
+            + '<a href="#" title="GoogleTranslate" onclick="javascript:doGoogleTranslate(\'#' + inputId + '\'); return false;">'
             + '<i class="icon-copy"></i>'
             + '</a>'
             + '</span>'
@@ -57,8 +63,8 @@ function addButtonToInput(input)
 
     } else {
         var html = input.html()
-            + '<span class="add-on">'
-            + '<a href="#" title="GoogleTranslate" onclick="javascript:doGoogleTranslate(\'#' + inputId + '\', null); return false;">'
+            + '<span class="add-on googletranslate-add-on" style="' + addonStyle + '">'
+            + '<a href="#" title="GoogleTranslate" onclick="javascript:doGoogleTranslate(\'#' + inputId + '\'); return false;">'
             + '<i class="icon-copy"></i>'
             + '</a>'
             + '</span>';

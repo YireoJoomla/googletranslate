@@ -9,134 +9,245 @@
  */
 
 // no direct access
-defined( '_JEXEC' ) or die( 'Restricted access' );
+defined('_JEXEC') or die('Restricted access');
 
-jimport( 'joomla.plugin.plugin' );
+jimport('joomla.plugin.plugin');
 
 /**
  * Google Translate System Plugin
  */
-class plgSystemGoogleTranslate extends JPlugin
+class PlgSystemGoogleTranslate extends JPlugin
 {
 	/**
 	 * Event onAfterRender
-	 *
-	 * @param null
-	 * @return null
 	 */
 	public function onBeforeRender()
 	{
-		if($this->allow() == false)
+		$document = JFactory::getDocument();
+
+		if ($this->allowTagReplacement())
 		{
-			return false;
+			$document->addScript(JUri::base() . '../media/com_googletranslate/js/editor-xtd.js');
 		}
 
-		// Add the proper JavaScript to this document
+		if ($this->allowJavaScript() == false)
+		{
+			return;
+		}
+
 		JHtml::_('jquery.framework');
-		$document = JFactory::getDocument();
-		$document->addScript(JURI::base().'../media/com_googletranslate/js/system.js');
-		//$document->addStyleSheet(JURI::base().'../media/com_googletranslate/css/system.css');
+		$document->addScript(JUri::base() . '../media/com_googletranslate/js/system.js');
+		$document->addScript(JUri::base() . '../media/com_googletranslate/js/editor-xtd.js');
+		$document->addStyleSheet(JUri::base() . '../media/com_googletranslate/css/system.css');
 	}
 
-    /**
-     * Event onAfterRender
-     *
-     * @param null
-     * @return null
-     */
-    public function onAfterRender()
-    {
-        if($this->allow() == false)
+	/**
+	 * Event onAfterRender
+	 */
+	public function onAfterRender()
+	{
+		if ($this->allowTagReplacement() == false)
 		{
-			return false;
+			return;
 		}
 
-        // Get the body and fetch a list of files
-        $body = JResponse::getBody();
+		// Get the body and fetch a list of files
+		$app = JFactory::getApplication();
+		$body = $app->getBody();
+		$replacedTags = array();
 
-        if(preg_match_all('/\<input([^\>]+)\>/', $body, $matches)) {
-            foreach($matches[0] as $matchIndex => $inputTag) {
-                if(preg_match('/type=\"([^\"]+)/', $inputTag, $matchType) == false) {
-                    continue;
-                }
+		if (preg_match_all('/\<input([^\>]+)\>/', $body, $matches))
+		{
+			foreach ($matches[0] as $matchIndex => $inputTag)
+			{
+				$inputTagHash = md5($inputTag);
 
-                $type = $matchType[1];
-                if(in_array($type, $this->getAllowedTypes()) == false) {
-                    continue;
-                }
+				if (in_array($inputTagHash, $replacedTags))
+				{
+					continue;
+				}
 
-                $inputId = null;
+				$replacementTag = $this->getInputReplacement($inputTag);
 
-                if(preg_match('/id=\"([^\"]+)/', $inputTag, $matchType)) {
-                    $inputId = 'input#'.$matchType[1];
-                } elseif(preg_match('/name=\"([^\"]+)/', $inputTag, $matchType)) {
-                    $inputId = 'input[name=\''.$matchType[1].'\']';
-                }
-                
-                if(empty($inputId)) {
-                    return null;
-                }
+				if (!empty($replacementTag))
+				{
+					$body = str_replace($inputTag, $replacementTag, $body);
+					$replacedTags[] = $inputTagHash;
+				}
+			}
+		}
 
-                $inputScript = 'javascript:doGoogleTranslate(\''.$inputId.'\', \'\', null);';
-                $inputScript .= 'return false;';
-                $inputHtml = array();
-                $inputHtml[] = '<div class="input-append">';
-                $inputHtml[] = $inputTag;
-                $inputHtml[] = '<span class="add-on">';
-                $inputHtml[] = '<a href="#" onclick="'.$inputScript.'"><i class="icon-copy"></i></a>';
-                $inputHtml[] = '</span>';
-                $inputHtml[] = '</div>';
-                
-                //$body = str_replace($inputTag, implode('', $inputHtml), $body);
-            }
-        }
+		if (preg_match_all('/\<textarea([^\>]+)\>(.*)\<\/textarea\>/', $body, $matches))
+		{
+			foreach ($matches[0] as $matchIndex => $inputTag)
+			{
+				$inputTagHash = md5($inputTag);
 
-        JResponse::setBody($body);
-    }
+				if (in_array($inputTagHash, $replacedTags))
+				{
+					continue;
+				}
 
-	protected function allow()
+				if (stristr($inputTag, 'style="display:none"'))
+				{
+					continue;
+				}
+
+				$replacementTag = $this->getInputReplacement($inputTag, 'textarea');
+
+				if (!empty($replacementTag))
+				{
+					$body = str_replace($inputTag, $replacementTag, $body);
+					$replacedTags[] = $inputTagHash;
+				}
+			}
+		}
+
+		$app->setBody($body);
+	}
+
+	/**
+	 * @param string $inputTag
+	 *
+	 * @return null|string
+	 */
+	protected function getInputReplacement($inputTag, $fieldType = 'input')
+	{
+		if ($fieldType == 'input')
+		{
+			if (preg_match('/type=\"([^\"]+)/', $inputTag, $matchType) == false)
+			{
+				return null;
+			}
+
+			$type = $matchType[1];
+
+			if (in_array($type, $this->getAllowedTypes()) == false)
+			{
+				return null;
+			}
+		}
+
+		$inputId = null;
+		$inputScript = null;
+
+		if (preg_match('/id=\"([^\"]+)/', $inputTag, $matchType))
+		{
+			$inputId = 'input#' . $matchType[1];
+			$inputScript = 'javascript:doGoogleTranslate(\'' . $inputId . '\', \'\');';
+			$inputScript .= 'return false;';
+		}
+		elseif (preg_match('/name=\"([^\"]+)/', $inputTag, $matchType))
+		{
+			$inputName = $matchType[1];
+			$inputScript = 'javascript:doGoogleTranslateByName(\'' . $inputName . '\', \'\');';
+			$inputScript .= 'return false;';
+		}
+
+		if (empty($inputName) && empty($inputId))
+		{
+			return null;
+		}
+
+		$inputHtml = array();
+		$inputHtml[] = '<div class="input-append">';
+		$inputHtml[] = $inputTag;
+		$inputHtml[] = '<span class="add-on">';
+		$inputHtml[] = '<a title="GoogleTranslate" href="#" onclick="' . $inputScript . '"><i class="icon-copy"></i></a>';
+		$inputHtml[] = '</span>';
+		$inputHtml[] = '</div>';
+
+		return implode('', $inputHtml);
+	}
+
+	/**
+	 * @return bool
+	 */
+	protected function allowJavaScript()
 	{
 		// Fetch variables
 		$app = JFactory::getApplication();
 		$jinput = $app->input;
+		$task = $jinput->getCmd('task');
 		$view = $jinput->getCmd('view');
-		$layout = $jinput->getCmd('layout');
 
 		// Check for the current view
-		if(in_array($view, $this->getAllowedViews()) == false) {
+		if (in_array($task, $this->getAllowedTasks()))
+		{
 			return false;
 		}
 
-		// Check for the current layout
-		if(in_array($layout, $this->getAllowedLayouts()) == false) {
+		// Check for the current view
+		if (!in_array($view, $this->getAllowedViews()))
+		{
 			return false;
 		}
 
 		return true;
 	}
 
-    protected function getAllowedTypes()
-    {
-        return array(
-            'text',
-        );
-    }
+	/**
+	 * @return bool
+	 * @throws Exception
+	 */
+	protected function allowTagReplacement()
+	{
+		// Fetch variables
+		$app = JFactory::getApplication();
+		$jinput = $app->input;
+		$task = $jinput->getCmd('task');
 
-    protected function getAllowedViews()
-    {
-        return array(
-            'module',
-            'category',
-            'article',
-            'item',
-        );
-    }
+		// Check for the current view
+		if (in_array($task, $this->getAllowedTasks()))
+		{
+			return true;
+		}
 
-    protected function getAllowedLayouts()
-    {
-        return array(
-            'edit',
-            'form',
-        );
-    }
+		return false;
+	}
+
+	/**
+	 * @return array
+	 */
+	protected function getAllowedTypes()
+	{
+		return array(
+			'text',
+		);
+	}
+
+	/**
+	 * @return array
+	 */
+	protected function getAllowedTasks()
+	{
+		return array(
+			'translate.edit',
+			'translate.apply',
+		);
+	}
+
+	/**
+	 * @return array
+	 */
+	protected function getAllowedViews()
+	{
+		return array(
+			'module',
+			'category',
+			'article',
+			'item',
+		);
+	}
+
+	/**
+	 * @return array
+	 */
+	protected function getAllowedLayouts()
+	{
+		return array(
+			'edit',
+			'form',
+		);
+	}
 }
